@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comparadora</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a0a;color:#ccc}
+
+#setup{display:flex;flex-direction:column;height:100vh}
+.hd{padding:20px 24px 10px;display:flex;align-items:center;gap:14px}
+.hd h1{font-size:16px;font-weight:700;color:#fff;letter-spacing:-.01em}
+.hd span{font-size:11px;color:#444}
+
+.paneles{display:flex;flex:1;gap:12px;padding:0 20px;min-height:0}
+.pnl{flex:1;display:flex;flex-direction:column;background:#111;border:1px solid #1c1c1c;border-radius:12px;overflow:hidden}
+.ph{padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #1c1c1c}
+.ph input{background:transparent;border:1px solid #252525;color:#fff;padding:5px 10px;border-radius:5px;font-size:13px;font-weight:500;width:130px;outline:none}
+.ph input:focus{border-color:#3a3a3a}
+.tg{display:flex;background:#181818;border-radius:5px;padding:2px;margin-left:auto}
+.tb{padding:4px 10px;background:none;border:none;color:#555;cursor:pointer;border-radius:4px;font-size:10px;font-family:inherit}
+.tb.on{background:#252525;color:#ccc}
+
+.pb{flex:1;position:relative;min-height:0}
+.tp{display:none;position:absolute;inset:0;flex-direction:column}
+.tp.on{display:flex}
+
+.dz{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;margin:8px;border:2px dashed #222;border-radius:8px;cursor:pointer;color:#333;font-size:12px;transition:all .2s}
+.dz:hover,.dz.over{border-color:#3a3a3a;color:#666}
+.dz .ic{font-size:22px}
+.dz input{display:none}
+.dz .fn{color:#666;font-size:10px}
+
+.ca{flex:1;background:#080808;color:#999;border:none;padding:10px;font-family:'SF Mono',Menlo,'Fira Code',monospace;font-size:11px;resize:none;outline:none;line-height:1.7;tab-size:2}
+
+.pf{padding:7px 14px;border-top:1px solid #1c1c1c;display:flex;align-items:center;justify-content:space-between}
+.st{font-size:10px;color:#333}
+.st.ok{color:#4ade80}
+.btn{padding:5px 12px;border:none;border-radius:4px;cursor:pointer;font-size:11px;font-family:inherit}
+.bs{background:#1a1a1a;color:#888}
+.bs:hover{background:#222}
+.bp{background:#fff;color:#000;font-weight:600;font-size:13px;padding:10px 36px;border-radius:8px;border:none;cursor:pointer}
+.bp:disabled{background:#1a1a1a;color:#333;cursor:not-allowed}
+
+.cb{padding:14px 20px 18px;display:flex;justify-content:center}
+
+#compare{display:none;height:100vh;position:relative}
+.split{display:flex;height:100%}
+.half{flex:1;position:relative;overflow:hidden}
+.half iframe{width:100%;height:100%;border:none;display:block}
+.dv{width:2px;background:#1a1a1a;flex-shrink:0;cursor:col-resize;position:relative;z-index:10}
+.lt{position:absolute;top:14px;padding:7px 16px;font-size:13px;font-weight:600;letter-spacing:.02em;color:rgba(255,255,255,.55);background:rgba(0,0,0,.4);backdrop-filter:blur(10px);pointer-events:none;z-index:5;border-radius:8px}
+.half:first-child .lt{left:14px}
+.half:last-child .lt{right:14px}
+
+#ctrl{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);display:none;align-items:center;gap:6px;padding:6px 14px;background:rgba(0,0,0,.5);backdrop-filter:blur(14px);border-radius:20px;border:1px solid rgba(255,255,255,.06);z-index:50}
+.cb2{width:30px;height:30px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.07);border:none;color:#aaa;border-radius:50%;cursor:pointer;font-size:12px}
+.cb2:hover{background:rgba(255,255,255,.14);color:#fff}
+.cb2.ac{background:rgba(255,255,255,.2);color:#fff}
+.cd{width:1px;height:18px;background:rgba(255,255,255,.08)}
+.sp{display:flex;align-items:center;gap:4px;font-size:9px;color:#555}
+.sp input{width:50px;accent-color:#fff}
+.pc{font-size:10px;color:#555;min-width:28px;text-align:center}
+
+.loader{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:#0a0a0a;z-index:2;transition:opacity .4s}
+.loader.hidden{opacity:0;pointer-events:none}
+.loader span{font-size:12px;color:#444;animation:pulse 1.5s infinite}
+.loader .sub{font-size:10px;color:#333;animation:none}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+
+#countdown{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:#0a0a0a;z-index:100;flex-direction:column;gap:16px}
+#countdown.on{display:flex}
+#countdown .num{font-size:120px;font-weight:700;color:#fff;line-height:1;opacity:.9}
+#countdown .hint{font-size:13px;color:#444;letter-spacing:.06em}
+</style>
+</head>
+<body>
+
+<div id="setup">
+  <div class="hd">
+    <h1>Comparadora</h1>
+    <span>HTML &middot; JSX &middot; React</span>
+  </div>
+  <div class="paneles">
+    <div class="pnl">
+      <div class="ph">
+        <input id="lb-l" value="Modelo A">
+        <div class="tg">
+          <button class="tb on" onclick="tab('l','up',this)">Subir</button>
+          <button class="tb" onclick="tab('l','pa',this)">Pegar</button>
+        </div>
+      </div>
+      <div class="pb">
+        <div class="tp on" id="l-up">
+          <div class="dz" id="dz-l">
+            <span class="ic">&#8593;</span>
+            <span>Arrastr&aacute; o clicke&aacute; para subir</span>
+            <span class="fn" id="fn-l"></span>
+            <input type="file" id="fi-l" accept=".html,.htm,.jsx,.tsx,.js,.ts">
+          </div>
+        </div>
+        <div class="tp" id="l-pa">
+          <textarea class="ca" id="ca-l" placeholder="Peg&aacute; tu c&oacute;digo HTML o JSX ac&aacute;..."></textarea>
+        </div>
+      </div>
+      <div class="pf">
+        <span class="st" id="st-l">Sin cargar</span>
+        <div style="display:flex;gap:5px">
+          <button class="btn bs" id="dl-l" style="display:none" onclick="dl('l')">&#8595; html</button>
+          <button class="btn bs" onclick="load('l')">Cargar</button>
+        </div>
+      </div>
+    </div>
+    <div class="pnl">
+      <div class="ph">
+        <input id="lb-r" value="Modelo B">
+        <div class="tg">
+          <button class="tb on" onclick="tab('r','up',this)">Subir</button>
+          <button class="tb" onclick="tab('r','pa',this)">Pegar</button>
+        </div>
+      </div>
+      <div class="pb">
+        <div class="tp on" id="r-up">
+          <div class="dz" id="dz-r">
+            <span class="ic">&#8593;</span>
+            <span>Arrastr&aacute; o clicke&aacute; para subir</span>
+            <span class="fn" id="fn-r"></span>
+            <input type="file" id="fi-r" accept=".html,.htm,.jsx,.tsx,.js,.ts">
+          </div>
+        </div>
+        <div class="tp" id="r-pa">
+          <textarea class="ca" id="ca-r" placeholder="Peg&aacute; tu c&oacute;digo HTML o JSX ac&aacute;..."></textarea>
+        </div>
+      </div>
+      <div class="pf">
+        <span class="st" id="st-r">Sin cargar</span>
+        <div style="display:flex;gap:5px">
+          <button class="btn bs" id="dl-r" style="display:none" onclick="dl('r')">&#8595; html</button>
+          <button class="btn bs" onclick="load('r')">Cargar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="cb">
+    <button class="bp" id="go" disabled onclick="go()">Comparar</button>
+  </div>
+</div>
+
+<div id="compare">
+  <div class="split">
+    <div class="half">
+      <div class="lt" id="ol-l">Modelo A</div>
+      <div class="loader" id="ld-l"><span>Cargando...</span><span class="sub" id="ld-l-sub"></span></div>
+      <iframe id="if-l"></iframe>
+    </div>
+    <div class="dv" id="divider"></div>
+    <div class="half">
+      <div class="lt" id="ol-r">Modelo B</div>
+      <div class="loader" id="ld-r"><span>Cargando...</span><span class="sub" id="ld-r-sub"></span></div>
+      <iframe id="if-r"></iframe>
+    </div>
+  </div>
+  <div id="ctrl">
+    <button class="cb2" onclick="back()" title="Volver">&#8592;</button>
+    <div class="cd"></div>
+    <button class="cb2" id="scb" onclick="tscroll()" title="Auto-scroll">&#9654;</button>
+    <button class="cb2" onclick="rscroll()" title="Volver arriba">&#8634;</button>
+    <div class="cd"></div>
+    <div class="sp">
+      <span>Vel</span>
+      <input type="range" id="spd" min="1" max="10" value="3">
+    </div>
+    <div class="cd"></div>
+    <span class="pc" id="pct">0%</span>
+  </div>
+</div>
+
+<div id="countdown">
+  <div class="num" id="cd-num">5</div>
+  <div class="hint">Preparate para grabar...</div>
+</div>
+
+<script>
+var S={l:{code:null,html:null,ready:false},r:{code:null,html:null,ready:false}};
+var scrolling=false,scrollPct=0,scrollRAF=null;
+
+function tab(s,t,btn){
+  var p=btn.parentElement;
+  p.querySelectorAll('.tb').forEach(function(b){b.classList.remove('on')});
+  btn.classList.add('on');
+  document.getElementById(s+'-up').classList.toggle('on',t==='up');
+  document.getElementById(s+'-pa').classList.toggle('on',t==='pa');
+}
+
+['l','r'].forEach(function(s){
+  var dz=document.getElementById('dz-'+s);
+  var fi=document.getElementById('fi-'+s);
+  dz.addEventListener('click',function(e){if(e.target.tagName!=='INPUT')fi.click()});
+  dz.addEventListener('dragover',function(e){e.preventDefault();dz.classList.add('over')});
+  dz.addEventListener('dragleave',function(){dz.classList.remove('over')});
+  dz.addEventListener('drop',function(e){e.preventDefault();dz.classList.remove('over');if(e.dataTransfer.files[0])rf(e.dataTransfer.files[0],s)});
+  fi.addEventListener('change',function(){if(fi.files[0])rf(fi.files[0],s)});
+});
+
+function rf(file,s){
+  var r=new FileReader();
+  r.onload=function(e){
+    S[s].code=e.target.result;
+    document.getElementById('fn-'+s).textContent=file.name;
+    document.getElementById('ca-'+s).value=S[s].code;
+  };
+  r.readAsText(file);
+}
+
+function detect(code){
+  var t=code.trim();
+  if(/^<!DOCTYPE/i.test(t)||/^<html/i.test(t))return'html';
+  if(/import\s+.*from\s+['"]react['"]/.test(code))return'jsx';
+  if(/export\s+default\s+(function|class)/.test(code))return'jsx';
+  if(/React\./.test(code))return'jsx';
+  if(/<[A-Z]\w.*\/>/.test(code))return'jsx';
+  return'html';
+}
+
+function wrapHTML(code){
+  var ss='<scr'+'ipt>window.addEventListener("message",function(e){if(e.data&&e.data.type==="scroll")window.scrollTo({top:e.data.top,behavior:"instant"})});</scr'+'ipt>';
+  if(code.indexOf('</body>')!==-1)return code.replace('</body>',ss+'</body>');
+  return code+ss;
+}
+
+function wrapJSX(code){
+  var lines=code.split('\n');
+  var imports=[];
+  var body=[];
+  var name='App';
+
+  for(var i=0;i<lines.length;i++){
+    var ln=lines[i];
+    var tr=ln.trim();
+    if(/^import\s+/.test(tr)){
+      imports.push(ln);
+    }else{
+      var m=tr.match(/^export\s+default\s+(?:function|class)\s+(\w+)/);
+      if(m){
+        name=m[1];
+        body.push(ln.replace(/export\s+default\s+/,''));
+      }else{
+        body.push(ln);
+      }
+    }
+  }
+
+  var allCode=imports.join('\n')+'\n'+
+    'import ReactDOM from "react-dom/client";\n'+
+    body.join('\n')+'\n'+
+    'ReactDOM.createRoot(document.getElementById("root")).render(React.createElement('+name+'));\n';
+
+  allCode=allCode.replace(/<\/script/gi,'<\\/script');
+
+  return '<!DOCTYPE html><html><head>'+
+    '<meta charset="UTF-8">'+
+    '<meta name="viewport" content="width=device-width,initial-scale=1.0">'+
+    '<scr'+'ipt src="https://cdn.tailwindcss.com"></scr'+'ipt>'+
+    '<scr'+'ipt src="https://unpkg.com/@babel/standalone@7.26.2/babel.min.js"></scr'+'ipt>'+
+    '<scr'+'ipt type="importmap">{"imports":{'+
+    '"react":"https://esm.sh/react@18.2.0",'+
+    '"react/":"https://esm.sh/react@18.2.0/",'+
+    '"react-dom":"https://esm.sh/react-dom@18.2.0",'+
+    '"react-dom/":"https://esm.sh/react-dom@18.2.0/",'+
+    '"framer-motion":"https://esm.sh/framer-motion@11.15.0?deps=react@18.2.0,react-dom@18.2.0",'+
+    '"lucide-react":"https://esm.sh/lucide-react@0.462.0?deps=react@18.2.0"'+
+    '}}</scr'+'ipt>'+
+    '<style>body{margin:0}#root{min-height:100vh}</style>'+
+    '</head><body>'+
+    '<div id="root"></div>'+
+    '<scr'+'ipt>window.addEventListener("message",function(e){if(e.data&&e.data.type==="scroll")window.scrollTo({top:e.data.top,behavior:"instant"})});</scr'+'ipt>'+
+    '<scr'+'ipt type="text/babel" data-type="module">'+allCode+'</scr'+'ipt>'+
+    '</body></html>';
+}
+
+function load(s){
+  var code=S[s].code||document.getElementById('ca-'+s).value;
+  if(!code.trim())return;
+  S[s].code=code;
+  var type=detect(code);
+  S[s].html=type==='jsx'?wrapJSX(code):wrapHTML(code);
+  S[s].ready=true;
+  var st=document.getElementById('st-'+s);
+  st.textContent=type.toUpperCase()+' cargado';
+  st.className='st ok';
+  document.getElementById('dl-'+s).style.display='inline-block';
+  check();
+}
+
+function check(){
+  document.getElementById('go').disabled=!(S.l.ready&&S.r.ready);
+}
+
+function go(){
+  document.getElementById('setup').style.display='none';
+  var cv=document.getElementById('compare');
+  cv.style.display='block';
+  document.getElementById('ol-l').textContent=document.getElementById('lb-l').value||'Modelo A';
+  document.getElementById('ol-r').textContent=document.getElementById('lb-r').value||'Modelo B';
+  var ifl=document.getElementById('if-l');
+  var ifr=document.getElementById('if-r');
+  var ldL=document.getElementById('ld-l');
+  var ldR=document.getElementById('ld-r');
+  ldL.classList.remove('hidden');
+  ldR.classList.remove('hidden');
+  var subL=document.getElementById('ld-l-sub');
+  var subR=document.getElementById('ld-r-sub');
+  var isJsxL=S.l.html.indexOf('babel')!==-1;
+  var isJsxR=S.r.html.indexOf('babel')!==-1;
+  if(isJsxL)subL.textContent='Transpilando JSX...';
+  else subL.textContent='';
+  if(isJsxR)subR.textContent='Transpilando JSX...';
+  else subR.textContent='';
+  ifl.srcdoc=S.l.html;
+  ifr.srcdoc=S.r.html;
+  var tL=null,tR=null;
+  function hideL(){ldL.classList.add('hidden');clearTimeout(tL)}
+  function hideR(){ldR.classList.add('hidden');clearTimeout(tR)}
+  ifl.onload=function(){hideL()};
+  ifr.onload=function(){hideR()};
+  if(isJsxL)tL=setTimeout(hideL,12000);
+  if(isJsxR)tR=setTimeout(hideR,12000);
+  scrollPct=0;
+  updPct();
+}
+
+function back(){
+  stopsc();
+  document.getElementById('compare').style.display='none';
+  document.getElementById('setup').style.display='flex';
+  document.getElementById('if-l').srcdoc='';
+  document.getElementById('if-r').srcdoc='';
+}
+
+function tscroll(){
+  if(scrolling){
+    stopsc();
+    showUI();
+  }else{
+    startCountdown();
+  }
+}
+
+function startCountdown(){
+  var cdEl=document.getElementById('countdown');
+  var cdNum=document.getElementById('cd-num');
+  cdEl.classList.add('on');
+  var count=5;
+  cdNum.textContent=count;
+  hideUI();
+  var cdTimer=setInterval(function(){
+    count--;
+    if(count<=0){
+      clearInterval(cdTimer);
+      cdEl.classList.remove('on');
+      startsc();
+    }else{
+      cdNum.textContent=count;
+    }
+  },1000);
+}
+
+function hideUI(){
+  document.getElementById('ctrl').style.display='none';
+}
+
+function showUI(){
+  document.getElementById('ctrl').style.display='flex';
+  document.getElementById('ol-l').style.display='';
+  document.getElementById('ol-r').style.display='';
+}
+
+function startsc(){
+  scrolling=true;
+  var b=document.getElementById('scb');
+  b.innerHTML='&#9646;&#9646;';
+  b.classList.add('ac');
+  step();
+}
+
+function stopsc(){
+  scrolling=false;
+  var b=document.getElementById('scb');
+  b.innerHTML='&#9654;';
+  b.classList.remove('ac');
+  if(scrollRAF)cancelAnimationFrame(scrollRAF);
+  scrollRAF=null;
+}
+
+function rscroll(){
+  stopsc();
+  scrollPct=0;
+  updPct();
+  doScroll(0);
+}
+
+function step(){
+  if(!scrolling)return;
+  var spd=parseInt(document.getElementById('spd').value);
+  var inc=spd*0.04;
+  scrollPct=Math.min(scrollPct+inc,100);
+  updPct();
+  doScroll(scrollPct/100);
+  if(scrollPct>=100){stopsc();showUI();return}
+  scrollRAF=requestAnimationFrame(step);
+}
+
+function doScroll(frac){
+  ['if-l','if-r'].forEach(function(id){
+    try{
+      var f=document.getElementById(id);
+      var win=f.contentWindow;
+      var doc=win.document.documentElement;
+      var max=doc.scrollHeight-win.innerHeight;
+      win.scrollTo(0,frac*max);
+    }catch(e){}
+  });
+}
+
+function updPct(){
+  document.getElementById('pct').textContent=Math.round(scrollPct)+'%';
+}
+
+function dl(s){
+  if(!S[s].html)return;
+  var b=new Blob([S[s].html],{type:'text/html'});
+  var u=URL.createObjectURL(b);
+  var a=document.createElement('a');
+  a.href=u;a.download='comparativa-'+s+'.html';a.click();
+  URL.revokeObjectURL(u);
+}
+
+var dv=document.getElementById('divider');
+var dragging=false;
+dv.addEventListener('mousedown',function(e){dragging=true;e.preventDefault()});
+document.addEventListener('mousemove',function(e){
+  if(!dragging)return;
+  var cv=document.getElementById('compare');
+  var rect=cv.getBoundingClientRect();
+  var pct=((e.clientX-rect.left)/rect.width)*100;
+  pct=Math.max(15,Math.min(85,pct));
+  var halves=cv.querySelectorAll('.half');
+  halves[0].style.flex='none';
+  halves[0].style.width=pct+'%';
+  halves[1].style.flex='none';
+  halves[1].style.width=(100-pct)+'%';
+});
+document.addEventListener('mouseup',function(){dragging=false});
+
+var ctrlEl=document.getElementById('ctrl');
+var compareEl=document.getElementById('compare');
+compareEl.addEventListener('mousemove',function(e){
+  if(!scrolling)ctrlEl.style.display='flex';
+});
+compareEl.addEventListener('mouseleave',function(){
+  if(!scrolling)ctrlEl.style.display='none';
+});
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'&&scrolling){
+    stopsc();
+    showUI();
+  }
+});
+</script>
+</body>
+</html>
